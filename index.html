@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flag Flashcards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-4 rounded-lg shadow-lg text-center w-full max-w-sm relative">
+        <span id="memorizedBadge" class="absolute top-2 left-2 bg-yellow-400 text-white text-xs font-bold px-2 py-1 rounded-full hidden">0</span>
+        <span id="showNameBadge" class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full hidden">0</span>
+
+        <button id="resetGameBtn" class="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 text-base mb-4 w-full hidden">Reset Game</button>
+
+        <img id="flagImage" src="" alt="Country Flag" class="w-full h-40 mx-auto mb-4 border border-gray-300 object-cover">
+        <div id="nameContainer" class="mb-4">
+            <p id="countryName" class="text-lg font-semibold hidden"></p>
+            <svg id="speakerIcon" class="w-6 h-6 mx-auto text-gray-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+            </svg>
+        </div>
+        <div class="flex flex-col gap-3">
+            <button id="showNameBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 text-base">Show Name</button>
+            <button id="nextFlagBtn" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 text-base">Next Flag</button>
+        </div>
+    </div>
+
+    <div id="congratsPopup" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-md mx-auto">
+            <h2 class="text-2xl font-bold mb-4 text-green-600">Congratulations!</h2>
+            <p class="mb-2 text-gray-700">You've reviewed all the flags!</p>
+            <p class="mb-1 text-gray-600">Memorized: <span id="popupMemorizedCount" class="font-semibold text-green-500">0</span></p>
+            <p class="mb-4 text-gray-600">Needed Help: <span id="popupShowNameCount" class="font-semibold text-red-500">0</span></p>
+            <button id="popupResetGameBtn" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 text-lg w-full">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Comprehensive list of UN member states and observer states with their ISO 3166-1 alpha-2 codes
+        const countries = [
+            { name: "Afghanistan", code: "AF" },
+            { name: "Albania", code: "AL" },
+            { name: "Algeria", code: "DZ" },
+            { name: "Andorra", code: "AD" },
+            { name: "Angola", code: "AO" },
+            { name: "Antigua and Barbuda", code: "AG" },
+            { name: "Argentina", code: "AR" },
+            { name: "Armenia", code: "AM" },
+            { name: "Australia", code: "AU" },
+            { name: "Austria", code: "AT" },
+            { name: "Azerbaijan", code: "AZ" },
+            { name: "Bahamas", code: "BS" },
+            { name: "Bahrain", code: "BH" },
+            { name: "Bangladesh", code: "BD" },
+            { name: "Barbados", code: "BB" },
+            { name: "Belarus", code: "BY" },
+            { name: "Belgium", code: "BE" },
+            { name: "Belize", code: "BZ" },
+            { name: "Benin", code: "BJ" },
+            { name: "Bhutan", code: "BT" },
+            { name: "Bolivia", code: "BO" },
+            { name: "Bosnia and Herzegovina", code: "BA" },
+            { name: "Botswana", code: "BW" },
+            { name: "Brazil", code: "BR" },
+            { name: "Brunei Darussalam", code: "BN" },
+            { name: "Bulgaria", code: "BG" },
+            { name: "Burkina Faso", code: "BF" },
+            { name: "Burundi", code: "BI" },
+            { name: "Cabo Verde", code: "CV" },
+            { name: "Cambodia", code: "KH" },
+            { name: "Cameroon", code: "CM" },
+            { name: "Canada", code: "CA" },
+            { name: "Central African Republic", code: "CF" },
+            { name: "Chad", code: "TD" },
+            { name: "Chile", code: "CL" },
+            { name: "China", code: "CN" },
+            { name: "Colombia", code: "CO" },
+            { name: "Comoros", code: "KM" },
+            { name: "Congo", code: "CG" },
+            { name: "Congo (Democratic Republic of the)", code: "CD" },
+            { name: "Costa Rica", code: "CR" },
+            { name: "Côte d'Ivoire", code: "CI" },
+            { name: "Croatia", code: "HR" },
+            { name: "Cuba", code: "CU" },
+            { name: "Cyprus", code: "CY" },
+            { name: "Czechia", code: "CZ" },
+            { name: "Denmark", code: "DK" },
+            { name: "Djibouti", code: "DJ" },
+            { name: "Dominica", code: "DM" },
+            { name: "Dominican Republic", code: "DO" },
+            { name: "Ecuador", code: "EC" },
+            { name: "Egypt", code: "EG" },
+            { name: "El Salvador", code: "SV" },
+            { name: "Equatorial Guinea", code: "GQ" },
+            { name: "Eritrea", code: "ER" },
+            { name: "Estonia", code: "EE" },
+            { name: "Eswatini", code: "SZ" },
+            { name: "Ethiopia", code: "ET" },
+            { name: "Fiji", code: "FJ" },
+            { name: "Finland", code: "FI" },
+            { name: "France", code: "FR" },
+            { name: "Gabon", code: "GA" },
+            { name: "Gambia", code: "GM" },
+            { name: "Georgia", code: "GE" },
+            { name: "Germany", code: "DE" },
+            { name: "Ghana", code: "GH" },
+            { name: "Greece", code: "GR" },
+            { name: "Grenada", code: "GD" },
+            { name: "Guatemala", code: "GT" },
+            { name: "Guinea", code: "GN" },
+            { name: "Guinea-Bissau", code: "GW" },
+            { name: "Guyana", code: "GY" },
+            { name: "Haiti", code: "HT" },
+            { name: "Holy See", code: "VA" },
+            { name: "Honduras", code: "HN" },
+            { name: "Hungary", code: "HU" },
+            { name: "Iceland", code: "IS" },
+            { name: "India", code: "IN" },
+            { name: "Indonesia", code: "ID" },
+            { name: "Iran", code: "IR" },
+            { name: "Iraq", code: "IQ" },
+            { name: "Ireland", code: "IE" },
+            { name: "Israel", code: "IL" },
+            { name: "Italy", code: "IT" },
+            { name: "Jamaica", code: "JM" },
+            { name: "Japan", code: "JP" },
+            { name: "Jordan", code: "JO" },
+            { name: "Kazakhstan", code: "KZ" },
+            { name: "Kenya", code: "KE" },
+            { name: "Kiribati", code: "KI" },
+            { name: "North Korea", code: "KP" },
+            { name: "South Korea", code: "KR" },
+            { name: "Kuwait", code: "KW" },
+            { name: "Kyrgyzstan", code: "KG" },
+            { name: "Lao People's Democratic Republic", code: "LA" },
+            { name: "Latvia", code: "LV" },
+            { name: "Lebanon", code: "LB" },
+            { name: "Lesotho", code: "LS" },
+            { name: "Liberia", code: "LR" },
+            { name: "Libya", code: "LY" },
+            { name: "Liechtenstein", code: "LI" },
+            { name: "Lithuania", code: "LT" },
+            { name: "Luxembourg", code: "LU" },
+            { name: "Madagascar", code: "MG" },
+            { name: "Malawi", code: "MW" },
+            { name: "Malaysia", code: "MY" },
+            { name: "Maldives", code: "MV" },
+            { name: "Mali", code: "ML" },
+            { name: "Malta", code: "MT" },
+            { name: "Marshall Islands", code: "MH" },
+            { name: "Mauritania", code: "MR" },
+            { name: "Mauritius", code: "MU" },
+            { name: "Mexico", code: "MX" },
+            { name: "Micronesia (Federated States of)", code: "FM" },
+            { name: "Moldova", code: "MD" },
+            { name: "Monaco", code: "MC" },
+            { name: "Mongolia", code: "MN" },
+            { name: "Montenegro", code: "ME" },
+            { name: "Morocco", code: "MA" },
+            { name: "Mozambique", code: "MZ" },
+            { name: "Myanmar", code: "MM" },
+            { name: "Namibia", code: "NA" },
+            { name: "Nauru", code: "NR" },
+            { name: "Nepal", code: "NP" },
+            { name: "Netherlands", code: "NL" },
+            { name: "New Zealand", code: "NZ" },
+            { name: "Nicaragua", code: "NI" },
+            { name: "Niger", code: "NE" },
+            { name: "Nigeria", code: "NG" },
+            { name: "North Macedonia", code: "MK" },
+            { name: "Norway", code: "NO" },
+            { name: "Oman", code: "OM" },
+            { name: "Pakistan", code: "PK" },
+            { name: "Palau", code: "PW" },
+            { name: "Palestine, State of", code: "PS" },
+            { name: "Panama", code: "PA" },
+            { name: "Papua New Guinea", code: "PG" },
+            { name: "Paraguay", code: "PY" },
+            { name: "Peru", code: "PE" },
+            { name: "Philippines", code: "PH" },
+            { name: "Poland", code: "PL" },
+            { name: "Portugal", code: "PT" },
+            { name: "Qatar", code: "QA" },
+            { name: "Romania", code: "RO" },
+            { name: "Russian Federation", code: "RU" },
+            { name: "Rwanda", code: "RW" },
+            { name: "Saint Kitts and Nevis", code: "KN" },
+            { name: "Saint Lucia", code: "LC" },
+            { name: "Saint Vincent and the Grenadines", code: "VC" },
+            { name: "Samoa", code: "WS" },
+            { name: "San Marino", code: "SM" },
+            { name: "Sao Tome and Principe", code: "ST" },
+            { name: "Saudi Arabia", code: "SA" },
+            { name: "Senegal", code: "SN" },
+            { name: "Serbia", code: "RS" },
+            { name: "Seychelles", code: "SC" },
+            { name: "Sierra Leone", code: "SL" },
+            { name: "Singapore", code: "SG" },
+            { name: "Slovakia", code: "SK" },
+            { name: "Slovenia", code: "SI" },
+            { name: "Solomon Islands", code: "SB" },
+            { name: "Somalia", code: "SO" },
+            { name: "South Africa", code: "ZA" },
+            { name: "South Sudan", code: "SS" },
+            { name: "Spain", code: "ES" },
+            { name: "Sri Lanka", code: "LK" },
+            { name: "Sudan", code: "SD" },
+            { name: "Suriname", code: "SR" },
+            { name: "Sweden", code: "SE" },
+            { name: "Switzerland", code: "CH" },
+            { name: "Syrian Arab Republic", code: "SY" },
+            { name: "Tajikistan", code: "TJ" },
+            { name: "Tanzania", code: "TZ" },
+            { name: "Thailand", code: "TH" },
+            { name: "Timor-Leste", code: "TL" },
+            { name: "Togo", code: "TG" },
+            { name: "Tonga", code: "TO" },
+            { name: "Trinidad and Tobago", code: "TT" },
+            { name: "Tunisia", code: "TN" },
+            { name: "Turkey", code: "TR" },
+            { name: "Turkmenistan", code: "TM" },
+            { name: "Tuvalu", code: "TV" },
+            { name: "Uganda", code: "UG" },
+            { name: "Ukraine", code: "UA" },
+            { name: "United Arab Emirates", code: "AE" },
+            { name: "United Kingdom", code: "GB" },
+            { name: "United States", code: "US" },
+            { name: "Uruguay", code: "UY" },
+            { name: "Uzbekistan", code: "UZ" },
+            { name: "Vanuatu", code: "VU" },
+            { name: "Venezuela", code: "VE" },
+            { name: "Vietnam", code: "VN" },
+            { name: "Yemen", code: "YE" },
+            { name: "Zambia", code: "ZM" },
+            { name: "Zimbabwe", code: "ZW" }
+        ];
+
+        // DOM Elements
+        const flagImage = document.getElementById("flagImage");
+        const countryName = document.getElementById("countryName");
+        const showNameBtn = document.getElementById("showNameBtn");
+        const nextFlagBtn = document.getElementById("nextFlagBtn");
+        const speakerIcon = document.getElementById("speakerIcon");
+        const memorizedBadge = document.getElementById("memorizedBadge");
+        const showNameBadge = document.getElementById("showNameBadge");
+        const mainResetGameBtn = document.getElementById("resetGameBtn");
+
+        // Popup elements
+        const congratsPopup = document.getElementById("congratsPopup");
+        const popupMemorizedCount = document.getElementById("popupMemorizedCount");
+        const popupShowNameCount = document.getElementById("popupShowNameCount");
+        const popupResetGameBtn = document.getElementById("popupResetGameBtn");
+
+        // Game State Variables
+        let currentCountry; // Holds the current country object {name, code}
+        let memorizedFlags = new Set(); // Set of country codes marked as memorized in the current session
+        let showedName = false; // Boolean: true if "Show Name" was clicked for the current flag
+        let showNameCount = 0; // Counter for flags where name was shown
+        let memorizedCount = 0; // Counter for flags memorized (Next clicked without Show Name)
+        let gameInteracted = false; // Boolean: true after first interaction (Show Name or Next)
+        let gameProgress = new Set(); // Set of country codes processed in the current session
+
+        /**
+         * Updates the count badges for memorized flags and shown names.
+         * Hides badges if their respective counts are zero.
+         */
+        function updateBadges() {
+            if (memorizedCount > 0) {
+                memorizedBadge.textContent = memorizedCount;
+                memorizedBadge.classList.remove("hidden");
+            } else {
+                memorizedBadge.classList.add("hidden");
+            }
+            if (showNameCount > 0) {
+                showNameBadge.textContent = showNameCount;
+                showNameBadge.classList.remove("hidden");
+            } else {
+                showNameBadge.classList.add("hidden");
+            }
+        }
+
+        /**
+         * Handles the first user interaction with game controls (Show Name or Next Flag).
+         * Makes the main "Reset Game" button visible.
+         */
+        function handleFirstInteraction() {
+            if (!gameInteracted) {
+                gameInteracted = true;
+                mainResetGameBtn.classList.remove("hidden");
+            }
+        }
+
+        /**
+         * Selects a random country that has not yet been processed in the current game session.
+         * @returns {object|null} A country object {name, code} or null if all countries processed.
+         */
+        function getRandomCountry() {
+            const notYetProcessedCountries = countries.filter(country => !gameProgress.has(country.code));
+            if (notYetProcessedCountries.length === 0) {
+                return null; // All countries have been processed
+            }
+            return notYetProcessedCountries[Math.floor(Math.random() * notYetProcessedCountries.length)];
+        }
+
+        /**
+         * Displays a new flag and country information.
+         * Updates UI elements for the new flag.
+         */
+        function displayNewFlag() {
+            currentCountry = getRandomCountry(); // Get a new unprocessed country
+
+            if (currentCountry) {
+                flagImage.src = `https://flagcdn.com/w320/${currentCountry.code.toLowerCase()}.png`;
+                flagImage.alt = `Flag of ${currentCountry.name}`; // Add alt text for accessibility
+                countryName.textContent = currentCountry.name;
+                countryName.classList.add("hidden");
+                speakerIcon.classList.add("hidden");
+
+                showNameBtn.classList.remove("hidden");
+                showNameBtn.disabled = false;
+                nextFlagBtn.disabled = false;
+            } else {
+                // This case implies all flags have been processed or the initial countries list is empty.
+                // The checkCompletion function should ideally handle the "all flags processed" scenario before this.
+                flagImage.src = "https://placehold.co/320x200/e2e8f0/64748b?text=All+Flags+Done!";
+                flagImage.alt = "All flags shown";
+                countryName.textContent = countries.length === 0 ? "No flags loaded." : "All flags processed!";
+                countryName.classList.remove("hidden");
+                speakerIcon.classList.add("hidden");
+                showNameBtn.classList.add("hidden");
+                nextFlagBtn.disabled = true;
+
+                // If somehow this point is reached and the popup isn't shown, trigger it.
+                if (countries.length > 0 && gameProgress.size === countries.length && congratsPopup.classList.contains('hidden')) {
+                    showCongratsPopup();
+                }
+            }
+            showedName = false; // Reset 'showedName' state for the new flag
+            updateBadges(); // Update display of badge counts
+        }
+
+        /**
+         * Shows the current country's name and speaks it using the Web Speech API.
+         * Updates counts if the name was shown for the first time for this flag.
+         */
+        function showCountryName() {
+            if (!currentCountry) return; // Do nothing if no current country
+
+            countryName.classList.remove("hidden");
+            speakerIcon.classList.remove("hidden");
+            showNameBtn.classList.add("hidden"); // Hide the "Show Name" button
+
+            if (!showedName) { // If name hasn't been shown for this flag yet
+                showNameCount++; // Increment count of names shown
+                // If this flag was previously marked as memorized (e.g. user clicked next, then came back via a bug/reset),
+                // it's no longer considered memorized if the name is now shown.
+                if (memorizedFlags.has(currentCountry.code)) {
+                    memorizedFlags.delete(currentCountry.code);
+                    memorizedCount = Math.max(0, memorizedCount - 1); // Decrement memorized count
+                }
+            }
+            showedName = true; // Mark that the name has been shown for this flag
+
+            // Speak the country name
+            if (window.speechSynthesis) {
+                const utterance = new SpeechSynthesisUtterance(currentCountry.name);
+                // Attempt to find an English voice. This can be improved with more robust voice selection.
+                const voices = window.speechSynthesis.getVoices();
+                const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
+                if (englishVoice) {
+                    utterance.voice = englishVoice;
+                } else {
+                    utterance.lang = "en-US"; // Fallback language
+                }
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        /**
+         * Checks if all countries in the list have been processed.
+         * If so, triggers the congratulations popup.
+         * @returns {boolean} True if the game is complete, false otherwise.
+         */
+        function checkCompletion() {
+            if (countries.length > 0 && gameProgress.size === countries.length) {
+                showCongratsPopup();
+                return true; // Game is complete
+            }
+            return false; // Game is not complete
+        }
+
+        /**
+         * Displays the congratulations popup with final scores.
+         * Disables main game buttons.
+         */
+        function showCongratsPopup() {
+            popupMemorizedCount.textContent = memorizedCount;
+            popupShowNameCount.textContent = showNameCount;
+            congratsPopup.classList.remove("hidden");
+
+            // Disable main game interface buttons
+            showNameBtn.disabled = true;
+            nextFlagBtn.disabled = true;
+            mainResetGameBtn.disabled = true;
+        }
+
+        /**
+         * Resets the game to its initial state.
+         * Clears all progress, counts, and hides/resets UI elements.
+         */
+        function resetGame() {
+            memorizedFlags.clear();
+            gameProgress.clear();
+            memorizedCount = 0;
+            showNameCount = 0;
+            showedName = false;
+            gameInteracted = false; // Reset interaction tracker
+            currentCountry = null; // Clear current country
+
+            mainResetGameBtn.classList.add("hidden"); // Hide the main reset button again
+            mainResetGameBtn.disabled = false; // Re-enable it for future interactions
+            congratsPopup.classList.add("hidden"); // Hide the congratulations popup
+
+            // Re-enable main game buttons
+            showNameBtn.disabled = false;
+            nextFlagBtn.disabled = false;
+
+            updateBadges(); // Reset badge displays
+            displayNewFlag(); // Display a new starting flag
+        }
+
+        // Event Listeners Setup
+
+        // "Show Name" button click handler
+        showNameBtn.addEventListener("click", () => {
+            if (!currentCountry) return; // Ignore if no current flag
+            handleFirstInteraction(); // Show reset button if first interaction
+            showCountryName(); // Reveal and speak country name, update counts
+            gameProgress.add(currentCountry.code); // Mark this flag as processed
+            updateBadges(); // Refresh badge counts
+            checkCompletion(); // Check if all flags have been processed
+        });
+
+        // "Next Flag" button click handler
+        nextFlagBtn.addEventListener("click", () => {
+            handleFirstInteraction(); // Show reset button if first interaction
+            if (currentCountry) { // If there was a flag being shown
+                if (!showedName) { // If name wasn't shown for the flag we are leaving
+                    // Only add to memorized if it wasn't already (e.g. from a previous cycle if game wasn't reset)
+                    if (!memorizedFlags.has(currentCountry.code)) {
+                        memorizedFlags.add(currentCountry.code);
+                        memorizedCount++;
+                    }
+                }
+                gameProgress.add(currentCountry.code); // Mark the flag we are leaving as processed
+            }
+            updateBadges(); // Update badge counts based on the flag just processed
+
+            if (checkCompletion()) { // If game is complete, show popup and stop
+                return;
+            }
+            displayNewFlag(); // Display the next flag
+        });
+
+        // Main "Reset Game" button click handler
+        mainResetGameBtn.addEventListener("click", resetGame);
+        // "Play Again" button in popup click handler
+        popupResetGameBtn.addEventListener("click", resetGame);
+
+        // Initial Game Setup
+        if (countries.length === 0) {
+            // Handle case where no countries are loaded
+            flagImage.src = "https://placehold.co/320x200/e2e8f0/64748b?text=Error";
+            flagImage.alt = "Error loading flags";
+            countryName.textContent = "No flags loaded. Please check the country list.";
+            countryName.classList.remove("hidden");
+            showNameBtn.disabled = true;
+            nextFlagBtn.disabled = true;
+            mainResetGameBtn.classList.add("hidden");
+        } else {
+            // Preload voices for speech synthesis if available - helps reduce delay on first speak
+            if (window.speechSynthesis && typeof window.speechSynthesis.getVoices === 'function') {
+                 window.speechSynthesis.getVoices();
+            }
+            displayNewFlag(); // Display the first flag to start the game
+        }
+    </script>
+</body>
+</html>
